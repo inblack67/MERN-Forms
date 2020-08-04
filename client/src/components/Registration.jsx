@@ -2,6 +2,8 @@ import React, { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import axios from 'axios'
 import M from 'materialize-css'
+import ReCAPTCHA from 'react-google-recaptcha'
+import { useRef } from 'react'
 
 const Registration = () => {
 
@@ -18,12 +20,21 @@ const Registration = () => {
 
     const [submitting, setSubmitting] = useState(false);
 
+    const reCaptchaRef = useRef();
+
+
+
     return (
         <div>
             <form onSubmit={handleSubmit(async formData => {
                 setSubmitting(true)
+
+                const reCaptchaToken = await reCaptchaRef.current.executeAsync();
+
+                reCaptchaRef.current.reset();
+
                 try {
-                    const res = await axios.post('/api/register', formData, {
+                    const res = await axios.post('/api/register', { formData, reCaptchaToken }, {
                         headers: {
                             'Content-Type': 'application/json'
                         }
@@ -31,7 +42,7 @@ const Registration = () => {
                     M.toast({ html: res.data.msg })
                 } catch (err) {
                     console.error(err)
-                    if(err.response.data){
+                    if(err.response.data.msg){
                         M.toast({ html: err.response.data.msg })
                     }
                 }
@@ -77,6 +88,9 @@ const Registration = () => {
                         <span>Prime?</span>
                     </label>
                 </div>
+
+                <ReCAPTCHA sitekey={process.env.REACT_APP_RECAPTCHA_PUBLIC} size='invisible' ref={reCaptchaRef} />
+
                 <div className="input-field">
                     <button disabled={submitting} type="submit" className='btn red'>
                         Register
